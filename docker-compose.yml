@@ -1,17 +1,29 @@
+version: '3.8'
+
 services:
   browser-use-webui:
+    container_name: webui
     platform: linux/amd64
     build:
       context: .
       dockerfile: ${DOCKERFILE:-Dockerfile}
       args:
         TARGETPLATFORM: ${TARGETPLATFORM:-linux/amd64}
+
     ports:
-      - "7788:7788"  # Gradio default port
+      - "7788:7788"  # Gradio web UI
       - "6080:6080"  # noVNC web interface
-      - "5901:5901"  # VNC port
-      - "9222:9222"  # Chrome remote debugging port
+      - "5901:5901"  # VNC access
+      - "9222:9222"  # Chrome remote debugging
+
     environment:
+      # nginx-proxy subdomain config
+      - VIRTUAL_HOST=webui.aiagency.now
+      - VIRTUAL_PORT=7788
+      - LETSENCRYPT_HOST=webui.aiagency.now
+      - LETSENCRYPT_EMAIL=[PUT EMAIL HERE]
+
+      # API keys and model endpoints
       - OPENAI_ENDPOINT=${OPENAI_ENDPOINT:-https://api.openai.com/v1}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
@@ -28,6 +40,8 @@ services:
       - ALIBABA_API_KEY=${ALIBABA_API_KEY:-}
       - MOONSHOT_ENDPOINT=${MOONSHOT_ENDPOINT:-https://api.moonshot.cn/v1}
       - MOONSHOT_API_KEY=${MOONSHOT_API_KEY:-}
+
+      # Chrome and session config
       - BROWSER_USE_LOGGING_LEVEL=${BROWSER_USE_LOGGING_LEVEL:-info}
       - ANONYMIZED_TELEMETRY=${ANONYMIZED_TELEMETRY:-false}
       - CHROME_PATH=/usr/bin/google-chrome
@@ -42,8 +56,13 @@ services:
       - VNC_PASSWORD=${VNC_PASSWORD:-vncpassword}
       - CHROME_DEBUGGING_PORT=9222
       - CHROME_DEBUGGING_HOST=localhost
+
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
+
+    networks:
+      - nginx-net
+
     restart: unless-stopped
     shm_size: '2gb'
     cap_add:
@@ -52,8 +71,13 @@ services:
       - seccomp=unconfined
     tmpfs:
       - /tmp
+
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "5901"]
       interval: 10s
       timeout: 5s
       retries: 3
+
+networks:
+  nginx-net:
+    external: true
