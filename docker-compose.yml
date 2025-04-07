@@ -21,7 +21,7 @@ services:
       - VIRTUAL_HOST=webui.aiagency.now
       - VIRTUAL_PORT=7788
       - LETSENCRYPT_HOST=webui.aiagency.now
-      - LETSENCRYPT_EMAIL=[PUT EMAIL HERE]
+      - LETSENCRYPT_EMAIL=greggblazer@gmail.com
 
       # API keys and model endpoints
       - OPENAI_ENDPOINT=${OPENAI_ENDPOINT:-https://api.openai.com/v1}
